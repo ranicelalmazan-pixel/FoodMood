@@ -381,6 +381,11 @@ let currentDisplayedFood = null;
 
 // Initialize
 document.addEventListener("DOMContentLoaded", () => {
+    // Check if running on file:// protocol
+    if (window.location.protocol === 'file:') {
+        alert("Notice: FoodMood is currently opened directly from a local file. To enable AI recipes and the chat Genie, please start the server (npm start) and access the site at http://localhost:8000.");
+    }
+
     // Load favorites from localStorage
     loadFavorites();
 
@@ -818,6 +823,12 @@ async function fetchFromOpenAI(messages) {
             temperature: 0.7
         })
     });
+
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+        const text = await response.text();
+        throw new Error(`Server returned non-JSON response: ${text.slice(0, 100)}`);
+    }
 
     const data = await response.json();
 
