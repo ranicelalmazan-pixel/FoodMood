@@ -378,6 +378,7 @@ let selectedDietary = "";
 let selectedTime = 30; // default 30+ min (accepts all)
 let favorites = [];
 let currentDisplayedFood = null;
+let conversationHistory = [];
 
 // Initialize
 document.addEventListener("DOMContentLoaded", () => {
@@ -858,6 +859,49 @@ async function fetchFromOpenAI(messages) {
     }
 }
 
+// Estimate tokens based on English characters (roughly 4 characters per token)
+function estimateTokens(text) {
+    if (!text) return 0;
+    return Math.ceil(text.length / 4);
+}
+
+// Compile conversation history with a sliding window of 100,000 tokens
+function getMessagesForApi() {
+    const systemMessages = [
+        {
+            role: "system",
+            content: "You are Chef Gusto, a friendly, passionate culinary expert from FoodMood. Keep your answers engaging, encouraging, and format with bullet points if listing steps. Use emojis. You are running on gpt-5.4-nano-2026-03-17."
+        }
+    ];
+
+    if (currentDisplayedFood) {
+        systemMessages.push({
+            role: "system",
+            content: `The user is currently viewing: ${currentDisplayedFood.name} (${currentDisplayedFood.cuisine} Cuisine). Keep this context in mind if they ask about it.`
+        });
+    }
+
+    const maxTokens = 100000;
+    let systemTokens = systemMessages.reduce((sum, msg) => sum + estimateTokens(msg.content), 0);
+    let availableTokens = maxTokens - systemTokens;
+
+    const activeHistory = [];
+
+    // Traverse the conversation history backward, adding messages if they fit the sliding context window
+    for (let i = conversationHistory.length - 1; i >= 0; i--) {
+        const msg = conversationHistory[i];
+        const tokens = estimateTokens(msg.content);
+        if (tokens <= availableTokens) {
+            activeHistory.unshift(msg); // Prepend to maintain chronological order
+            availableTokens -= tokens;
+        } else {
+            break; // Stop including older messages once we exceed the token budget
+        }
+    }
+
+    return [...systemMessages, ...activeHistory];
+}
+
 // Ask AI Chatbot helper
 async function handleUserMessage() {
     const input = document.getElementById("chat-input");
@@ -867,36 +911,26 @@ async function handleUserMessage() {
     const userText = input.value.trim();
     if (!userText) return;
 
-    // Append user bubble
+    // Append user bubble and record in history
     appendChatBubble(userText, "user");
+    conversationHistory.push({ role: "user", content: userText });
     input.value = "";
 
     // Append loading bubble
     const loadingBubble = appendChatBubble("Genie is thinking... 💭", "assistant");
 
     try {
-        const messages = [
-            {
-                role: "system",
-                content: "You are Chef Gusto, a friendly, passionate culinary expert from FoodMood. Keep your answers engaging, encouraging, and format with bullet points if listing steps. Use emojis. You are running on gpt-5.4-nano-2026-03-17."
-            }
-        ];
-
-        if (currentDisplayedFood) {
-            messages.push({
-                role: "system",
-                content: `The user is currently viewing: ${currentDisplayedFood.name} (${currentDisplayedFood.cuisine} Cuisine). Keep this context in mind if they ask about it.`
-            });
-        }
-
-        messages.push({ role: "user", content: userText });
-
+        const messages = getMessagesForApi();
         const reply = await fetchFromOpenAI(messages);
+        
         loadingBubble.remove();
         appendChatBubble(reply, "assistant");
+        conversationHistory.push({ role: "assistant", content: reply });
     } catch (e) {
         loadingBubble.remove();
         appendChatBubble(`Error: ${e.message}`, "assistant");
+        // Remove the failed user message from history
+        conversationHistory.pop();
     }
 }
 
@@ -929,6 +963,16 @@ Keep it concise and highly readable.`;
 
         btn.innerText = "✨ Recipe Generated!";
         appendChatBubble(reply, "assistant");
+
+        // Record recipe in history so chatbot is aware of it in follow-ups
+        conversationHistory.push({ 
+            role: "user", 
+            content: `Generate an AI Recipe for ${currentDisplayedFood.name}` 
+        });
+        conversationHistory.push({ 
+            role: "assistant", 
+            content: `Here is the AI Recipe for ${currentDisplayedFood.name}:\n\n${reply}` 
+        });
     } catch (e) {
         btn.innerText = "✨ Generate AI Recipe";
         btn.disabled = false;
