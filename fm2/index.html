@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoodMood - Decide What to Eat Instantly</title>
+    <meta name="description" content="Stuck on what to eat? Use FoodMood's interactive selectors and roulette wheel to find the perfect meal across multiple cuisines in seconds.">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header>
+        <div class="nav-container">
+            <a href="#" class="logo" id="logo-home">
+                🍕 Food<span class="accent">Mood</span>
+            </a>
+            <div class="nav-actions">
+                <button type="button" class="btn-settings-toggle" id="btn-settings-trigger" title="AI Settings">
+                    ⚙️
+                </button>
+                <button type="button" class="btn-history" id="btn-history-trigger">
+                    <span>❤️ Favorites</span>
+                    <span class="badge" id="history-badge">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Header -->
+    <section class="hero">
+        <h1>Stuck on what to eat? <br><span class="highlight">Let's solve it.</span></h1>
+        <p>Choose your preferences below, toggle Surprise Me, or take a spin on the culinary roulette wheel to find your next favorite meal.</p>
+    </section>
+
+    <!-- Main Container -->
+    <main>
+        <!-- Left Column: Preference Selector Form -->
+        <section class="card-panel">
+            <h2 class="section-title">🍽️ Craving Customizer</h2>
+            
+            <form id="recommendation-form" onsubmit="event.preventDefault();">
+                
+                <!-- Surprise Me Switch -->
+                <div class="form-group toggle-wrapper">
+                    <div class="toggle-info">
+                        <span class="toggle-title">✨ Surprise Me</span>
+                        <span class="toggle-desc">Skip all preference filters and pick anything!</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="surprise-toggle">
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+
+                <!-- Budget Slider -->
+                <div class="form-group">
+                    <label class="form-label" for="budget-slider">Budget Level</label>
+                    <div class="slider-container">
+                        <input type="range" min="1" max="3" value="2" class="range-slider" id="budget-slider">
+                        <div class="slider-labels">
+                            <span>$ (Cheap)</span>
+                            <span class="active">$$ (Mid)</span>
+                            <span>$$$ (Pricey)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cuisine Chips Selection -->
+                <div class="form-group">
+                    <label class="form-label">Select Cuisine</label>
+                    <div class="cuisine-grid" id="cuisine-chips">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+
+                <!-- Meal Type Selection -->
+                <div class="form-group">
+                    <label class="form-label">Meal Type</label>
+                    <div class="options-flex">
+                        <button type="button" class="chip-btn selected" data-meal="Any">Any</button>
+                        <button type="button" class="chip-btn" data-meal="Breakfast">🥞 Breakfast</button>
+                        <button type="button" class="chip-btn" data-meal="Lunch">🥪 Lunch</button>
+                        <button type="button" class="chip-btn" data-meal="Dinner">🍝 Dinner</button>
+                        <button type="button" class="chip-btn" data-meal="Snack">🍿 Snack</button>
+                        <button type="button" class="chip-btn" data-meal="Dessert">🍰 Dessert</button>
+                    </div>
+                </div>
+
+                <!-- Mood Selection -->
+                <div class="form-group">
+                    <label class="form-label">Current Mood</label>
+                    <div class="options-flex">
+                        <button type="button" class="chip-btn selected" data-mood="Any">Any</button>
+                        <button type="button" class="chip-btn" data-mood="Comfort Food">🛋️ Comfort Food</button>
+                        <button type="button" class="chip-btn" data-mood="Healthy">🌱 Healthy</button>
+                        <button type="button" class="chip-btn" data-mood="Spicy">🌶️ Spicy</button>
+                        <button type="button" class="chip-btn" data-mood="Sweet">🍭 Sweet</button>
+                        <button type="button" class="chip-btn" data-mood="Savory">🥩 Savory</button>
+                        <button type="button" class="chip-btn" data-mood="Quick Bite">⚡ Quick Bite</button>
+                    </div>
+                </div>
+
+                <!-- Time Available -->
+                <div class="form-group">
+                    <label class="form-label">Time Available</label>
+                    <div class="options-flex">
+                        <button type="button" class="chip-btn time-btn" data-time="10">⏱️ ≤10 min</button>
+                        <button type="button" class="chip-btn time-btn" data-time="20">⏱️ ≤20 min</button>
+                        <button type="button" class="chip-btn time-btn selected" data-time="30">⏱️ 30+ min</button>
+                    </div>
+                </div>
+
+                <!-- Dietary Preferences -->
+                <div class="form-group">
+                    <label class="form-label">Dietary Restrictions</label>
+                    <div class="options-flex">
+                        <button type="button" class="chip-btn selected" data-dietary="Any">None</button>
+                        <button type="button" class="chip-btn" data-dietary="Vegetarian">🥗 Vegetarian</button>
+                        <button type="button" class="chip-btn" data-dietary="Vegan">🥑 Vegan</button>
+                        <button type="button" class="chip-btn" data-dietary="Halal">🕌 Halal</button>
+                        <button type="button" class="chip-btn" data-dietary="Gluten-Free">🌾 Gluten-Free</button>
+                    </div>
+                </div>
+
+                <!-- Recommend Action -->
+                <button type="button" class="btn-recommend" id="btn-recommend">
+                    🔮 Recommend Food
+                </button>
+            </form>
+        </section>
+
+        <!-- Right Column: Spin & Results -->
+        <section class="sidebar-panel">
+            
+            <!-- Roulette Card -->
+            <div class="card-panel wheel-container">
+                <h2 class="section-title">🎡 Cuisine Roulette</h2>
+                <div class="roulette-wrapper">
+                    <div class="wheel-pointer"></div>
+                    <div class="wheel" id="wheel">
+                        <div class="wheel-inner">
+                            <div class="wheel-label">Filipino</div>
+                            <div class="wheel-label">Japanese</div>
+                            <div class="wheel-label">Korean</div>
+                            <div class="wheel-label">Chinese</div>
+                            <div class="wheel-label">Italian</div>
+                            <div class="wheel-label">American</div>
+                            <div class="wheel-label">Mexican</div>
+                            <div class="wheel-label">Indian</div>
+                        </div>
+                    </div>
+                    <div class="wheel-center" id="wheel-center-trigger">SPIN</div>
+                </div>
+            </div>
+
+            <!-- Recommendation Output -->
+            <div class="card-panel" id="intro-card">
+                <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; text-align: center;">Make a selection above</h3>
+                <p style="color: var(--text-muted); text-align: center; font-size: 0.9rem;">Fill in your cravings or tap spin to discover what to eat!</p>
+            </div>
+
+            <div class="card-panel result-card" id="result-card">
+                <div class="result-header">
+                    <span class="result-cuisine" id="res-cuisine">Italian</span>
+                    <button class="btn-save-fav" id="btn-fav-toggle" aria-label="Save to favorites">🤍</button>
+                </div>
+                <h3 class="result-title" id="res-title">Classic Margherita Pizza</h3>
+                <div class="result-meta">
+                    <span id="res-vibe-badge">✨ <span id="val-vibe">Fresh & Savory</span></span>
+                    <span>⏱️ <span id="val-time">25 mins</span></span>
+                    <span>💰 <span id="val-budget">$$</span></span>
+                    <span>🔥 <span id="val-cals">600 kcal</span></span>
+                </div>
+                <p class="result-desc" id="res-desc">
+                    Simple Neapolitan masterpiece topped with fresh mozzarella, tomato sauce, and sweet basil leaves.
+                </p>
+
+                <!-- Additional Details -->
+                <div class="result-details">
+                    <h4 style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem;">Key Ingredients:</h4>
+                    <ul id="res-ingredients" style="list-style-position: inside; font-size: 0.9rem; color: var(--text-muted); display: grid; grid-template-columns: 1fr 1fr; gap: 0.25rem 1rem;">
+                        <!-- Filled by JS -->
+                    </ul>
+                </div>
+
+                <div class="result-actions">
+                    <button type="button" class="btn-action-outline btn-ai-recipe" id="btn-ai-recipe">
+                        ✨ Generate AI Recipe
+                    </button>
+                    <a href="#" class="btn-action-outline" id="btn-recipe-search">📖 Search Web Recipe</a>
+                    <a href="#" class="btn-action-outline" id="btn-find-near">📍 Restaurants Near Me</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Favorites Drawer Backdrop -->
+    <div class="drawer-backdrop" id="drawer-backdrop"></div>
+
+    <!-- Off-canvas Favorites Drawer -->
+    <div class="history-drawer" id="history-drawer">
+        <div class="drawer-header">
+            <h3 class="drawer-title">Saved Cravings</h3>
+            <button type="button" class="btn-close-drawer" id="btn-close-drawer">✕</button>
+        </div>
+        <div class="drawer-content" id="drawer-favorites-list">
+            <!-- Populated dynamically -->
+        </div>
+    </div>
+
+    <!-- AI Settings Modal -->
+    <div class="settings-modal" id="settings-modal">
+        <div class="settings-header">
+            <h3 style="font-weight:700;">⚙️ AI Configuration</h3>
+            <button type="button" class="btn-close-drawer" id="btn-close-settings" style="background:none;border:none;font-size:1.2rem;cursor:pointer;">✕</button>
+        </div>
+        <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem;">
+            Provide your OpenAI API key to enable AI Chef Recipe Generation and the Food Genie chat assistant. Keys are saved locally on your device.
+        </p>
+        <div class="form-group">
+            <label class="form-label" for="api-key-input">OpenAI API Key</label>
+            <input type="password" class="settings-input" id="api-key-input" placeholder="sk-proj-...">
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:0.5rem;">
+            <button type="button" class="btn-action-outline" id="btn-clear-settings" style="flex:none;width:auto;padding:0.5rem 1rem;">Clear</button>
+            <button type="button" class="btn-primary" id="btn-save-settings">Save Config</button>
+        </div>
+    </div>
+
+    <!-- Floating AI Chat Assistant -->
+    <div class="ai-chat-widget">
+        <button type="button" class="ai-chat-btn" id="ai-chat-trigger" title="Ask the AI Food Genie">
+            🔮
+        </button>
+        <div class="ai-chat-panel" id="ai-chat-panel">
+            <div class="ai-chat-header">
+                <span class="ai-chat-title">🔮 AI Food Genie</span>
+                <button type="button" class="btn-close-drawer" id="btn-close-chat" style="color:white;background:none;border:none;font-size:1.2rem;cursor:pointer;">✕</button>
+            </div>
+            <div class="ai-chat-messages" id="ai-chat-messages">
+                <div class="chat-bubble assistant">
+                    Hello! I am your AI Food Genie. Ask me any culinary questions or request a custom recipe based on your selection!
+                </div>
+            </div>
+            <div class="ai-chat-input-area">
+                <input type="text" class="chat-input" id="chat-input" placeholder="Ask about ingredients, variations...">
+                <button type="button" class="btn-send-chat" id="btn-send-chat">➔</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 FoodMood. Crafted with ❤️ for indecisive foodies.</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
