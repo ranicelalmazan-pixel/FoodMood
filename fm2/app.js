@@ -329,6 +329,47 @@ const FOOD_DATABASE = [
     }
 ];
 
+// Restaurant spotlights database mapped to cuisine type
+const RESTAURANT_DATABASE = {
+    "Filipino": [
+        { name: "Kusina Fiesta Bistro", rating: "4.8", price: "₱₱", distance: "0.8 km", location: "Corner St, Metro Food Park" },
+        { name: "Manila Grill & Barrio", rating: "4.6", price: "₱", distance: "1.5 km", location: "Downtown Ave, Food Block" },
+        { name: "Bario Fiesta Express", rating: "4.5", price: "₱₱", distance: "2.3 km", location: "SM South City Annex" }
+    ],
+    "Japanese": [
+        { name: "Sakura Ramen House", rating: "4.9", price: "$$", distance: "0.4 km", location: "Sake District, Cherry St" },
+        { name: "Sushi Izakaya Zen", rating: "4.7", price: "$$$", distance: "1.2 km", location: "Nakamura Tower, Level 2" },
+        { name: "Tokyo Kitchen Express", rating: "4.3", price: "$", distance: "2.0 km", location: "Central Metro station" }
+    ],
+    "Korean": [
+        { name: "Seoul Fried Chicken", rating: "4.8", price: "$$", distance: "0.9 km", location: "K-Town Blvd, Plaza 4" },
+        { name: "Kimchi Palace BBQ", rating: "4.7", price: "$$$", distance: "1.8 km", location: "Soju Lane, Food Row" }
+    ],
+    "Chinese": [
+        { name: "Great Wall Dim Sum", rating: "4.6", price: "$$", distance: "0.6 km", location: "Chinatown Arch, Temple St" },
+        { name: "Golden Dragon Wok", rating: "4.4", price: "$", distance: "1.3 km", location: "East Gate Plaza" }
+    ],
+    "Italian": [
+        { name: "Luigi's Trattoria & Pizza", rating: "4.9", price: "$$$", distance: "1.1 km", location: "Venice Lane, Little Italy" },
+        { name: "Pasta Bella Cafe", rating: "4.5", price: "$$", distance: "2.5 km", location: "Grand Promenade Boulevard" }
+    ],
+    "American": [
+        { name: "Diner 88 & Grill", rating: "4.7", price: "$$", distance: "0.5 km", location: "Route 66 Cross, Center Town" },
+        { name: "Buffalo Wings Depot", rating: "4.5", price: "$", distance: "1.7 km", location: "Sport Center Terminal" }
+    ],
+    "Mexican": [
+        { name: "El Camino Cantina", rating: "4.8", price: "$$", distance: "0.7 km", location: "Taco Junction, South Blvd" },
+        { name: "Tacos Loco", rating: "4.6", price: "$", distance: "1.2 km", location: "Market Bazaar Lane" }
+    ],
+    "Indian": [
+        { name: "Taj Mahal Palace Spices", rating: "4.8", price: "$$$", distance: "1.4 km", location: "Masala Square, High Rd" },
+        { name: "Chutney Bistro", rating: "4.5", price: "$$", distance: "2.1 km", location: "Garden Gate Mall" }
+    ],
+    "Thai": [
+        { name: "Bangkok Street Food", rating: "4.7", price: "$$", distance: "1.0 km", location: "Siam Walkway" }
+    ]
+};
+
 // State variables
 let selectedCuisine = "";
 let selectedMealType = "";
@@ -336,29 +377,18 @@ let selectedMood = "";
 let selectedDietary = "";
 let selectedTime = 30; // default 30+ min (accepts all)
 let favorites = [];
-let apiKey = "";
 let currentDisplayedFood = null;
 
 // Initialize
 document.addEventListener("DOMContentLoaded", () => {
     // Load favorites from localStorage
     loadFavorites();
-    loadApiKey();
 
     // Render interactive selections
     renderCuisineChips();
     setupEventListeners();
     updateBudgetLabel(2); // Default medium budget
 });
-
-// Load API Key
-function loadApiKey() {
-    apiKey = localStorage.getItem("foodmood_api_key") || "";
-    const keyInput = document.getElementById("api-key-input");
-    if (keyInput && apiKey) {
-        keyInput.value = apiKey;
-    }
-}
 
 // Setup Cuisine Chips
 const cuisines = ["Any", "Filipino", "Japanese", "Korean", "Chinese", "Italian", "American", "Mexican", "Indian"];
@@ -459,49 +489,6 @@ function setupEventListeners() {
         btnHistory.addEventListener("click", toggleDrawer);
         backdrop.addEventListener("click", toggleDrawer);
         if (btnCloseDrawer) btnCloseDrawer.addEventListener("click", toggleDrawer);
-    }
-
-    // Settings Modal Triggers
-    const btnSettings = document.getElementById("btn-settings-trigger");
-    const settingsModal = document.getElementById("settings-modal");
-    const btnCloseSettings = document.getElementById("btn-close-settings");
-    const btnSaveSettings = document.getElementById("btn-save-settings");
-    const btnClearSettings = document.getElementById("btn-clear-settings");
-
-    if (btnSettings && settingsModal && backdrop) {
-        const openSettings = () => {
-            settingsModal.classList.add("open");
-            backdrop.classList.add("open");
-        };
-
-        const closeSettings = () => {
-            settingsModal.classList.remove("open");
-            if (!drawer.classList.contains("open")) {
-                backdrop.classList.remove("open");
-            }
-        };
-
-        btnSettings.addEventListener("click", openSettings);
-        if (btnCloseSettings) btnCloseSettings.addEventListener("click", closeSettings);
-
-        if (btnSaveSettings) {
-            btnSaveSettings.addEventListener("click", () => {
-                const val = document.getElementById("api-key-input").value.trim();
-                localStorage.setItem("foodmood_api_key", val);
-                apiKey = val;
-                alert("AI Configuration saved successfully!");
-                closeSettings();
-            });
-        }
-
-        if (btnClearSettings) {
-            btnClearSettings.addEventListener("click", () => {
-                document.getElementById("api-key-input").value = "";
-                localStorage.removeItem("foodmood_api_key");
-                apiKey = "";
-                alert("API Key cleared!");
-            });
-        }
     }
 
     // AI Chat Floating Widget Trigger
@@ -700,8 +687,37 @@ function displayResult(food) {
         btnAiRecipe.disabled = false;
     }
 
+    // Render Nearby Spots
+    renderNearbyRestaurants(food.cuisine);
+
     resultCard.classList.add("active");
     resultCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+// Render Nearby Restaurant Spotlight Cards
+function renderNearbyRestaurants(cuisine) {
+    const container = document.getElementById("restaurants-container");
+    const list = document.getElementById("restaurant-list");
+    if (!container || !list) return;
+
+    const restaurants = RESTAURANT_DATABASE[cuisine] || RESTAURANT_DATABASE["American"];
+    
+    list.innerHTML = "";
+    restaurants.forEach(rest => {
+        const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rest.name + " " + rest.location)}`;
+        const card = document.createElement("div");
+        card.className = "restaurant-card-item";
+        card.innerHTML = `
+            <div class="rest-info">
+                <span class="rest-name">${rest.name}</span>
+                <span class="rest-meta">⭐ ${rest.rating} • ${rest.price} • 📍 ${rest.distance} • <span style="color:var(--text-muted);">${rest.location}</span></span>
+            </div>
+            <a href="${mapUrl}" target="_blank" class="btn-rest-link">Directions</a>
+        `;
+        list.appendChild(card);
+    });
+
+    container.style.display = "block";
 }
 
 // Toggle Favorite Saved
@@ -788,36 +804,27 @@ function renderFavoritesList() {
 }
 
 // ----------------------------------------------------
-// AI Integration (OpenAI API call using gpt-5.4-nano-2026-03-17)
+// AI Integration (calls backend server `/api/ai`)
 // ----------------------------------------------------
 
 async function fetchFromOpenAI(messages) {
-    if (!apiKey) {
-        // Trigger modal opening
-        document.getElementById("settings-modal").classList.add("open");
-        document.getElementById("drawer-backdrop").classList.add("open");
-        throw new Error("API Key missing");
-    }
-
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch("/api/ai", {
         method: "POST",
         headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${apiKey}`
+            "Content-Type": "application/json"
         },
         body: JSON.stringify({
-            model: "gpt-5.4-nano-2026-03-17",
-            messages: messages,
+            messages: messages || [],
             temperature: 0.7
         })
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error?.message || "Failed to query AI");
+        throw new Error(data.error?.message || "Failed to query server AI");
     }
 
-    const data = await response.json();
     return data.choices[0].message.content;
 }
 
@@ -845,7 +852,6 @@ async function handleUserMessage() {
             }
         ];
 
-        // If a food is currently selected, add it to system instructions
         if (currentDisplayedFood) {
             messages.push({
                 role: "system",
@@ -860,11 +866,7 @@ async function handleUserMessage() {
         appendChatBubble(reply, "assistant");
     } catch (e) {
         loadingBubble.remove();
-        if (e.message !== "API Key missing") {
-            appendChatBubble(`Error: ${e.message}`, "assistant");
-        } else {
-            appendChatBubble("Please configure your OpenAI API key in the settings (⚙️) menu to activate the Food Genie!", "assistant");
-        }
+        appendChatBubble(`Error: ${e.message}`, "assistant");
     }
 }
 
@@ -900,11 +902,7 @@ Keep it concise and highly readable.`;
     } catch (e) {
         btn.innerText = "✨ Generate AI Recipe";
         btn.disabled = false;
-        if (e.message !== "API Key missing") {
-            appendChatBubble(`Could not generate recipe: ${e.message}`, "assistant");
-        } else {
-            appendChatBubble("Please input your OpenAI API Key in the settings (⚙️) to use AI recipe generation!", "assistant");
-        }
+        appendChatBubble(`Could not generate recipe: ${e.message}`, "assistant");
     }
 }
 
@@ -916,7 +914,6 @@ function appendChatBubble(text, sender) {
     const bubble = document.createElement("div");
     bubble.className = `chat-bubble ${sender}`;
     
-    // Simple markdown-to-HTML parser (bold and lists)
     let formattedText = text
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
