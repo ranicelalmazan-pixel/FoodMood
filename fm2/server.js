@@ -9,6 +9,17 @@ const PORT = process.env.PORT || 8000;
 
 app.use(express.json());
 
+// Enable CORS for all requests (useful when running from IDE live preview or other custom ports)
+app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+    res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
+    if (req.method === "OPTIONS") {
+        return res.sendStatus(200);
+    }
+    next();
+});
+
 // Serve static files from the current folder (fm2)
 app.use(express.static(__dirname));
 

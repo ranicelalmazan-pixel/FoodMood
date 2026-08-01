@@ -813,30 +813,44 @@ function renderFavoritesList() {
 // ----------------------------------------------------
 
 async function fetchFromOpenAI(messages) {
-    const response = await fetch("/api/ai", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            messages: messages || [],
-            temperature: 0.7
-        })
-    });
+    // If the page is hosted on the same origin/port, use a relative path.
+    // If it's loaded from a custom preview server (like port 58760, 5500) or file://,
+    // point to the Express backend default port 8000.
+    const isSameOrigin = window.location.port === "8000";
+    const apiUrl = isSameOrigin ? "/api/ai" : "http://localhost:8000/api/ai";
 
-    const contentType = response.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-        const text = await response.text();
-        throw new Error(`Server returned non-JSON response: ${text.slice(0, 100)}`);
+    try {
+        const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                messages: messages || [],
+                temperature: 0.7
+            })
+        });
+
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            const text = await response.text();
+            throw new Error(`Server returned non-JSON response: ${text.slice(0, 100)}`);
+        }
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error?.message || "Failed to query server AI");
+        }
+
+        return data.choices[0].message.content;
+    } catch (error) {
+        // If the connection failed completely, it might mean the backend is not running or unreachable.
+        if (error.message === "Failed to fetch" || error.name === "TypeError") {
+            throw new Error("Could not connect to the FoodMood backend server. Please make sure the server is running (execute 'npm start' in the 'fm2' folder) and listening on port 8000.");
+        }
+        throw error;
     }
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.error?.message || "Failed to query server AI");
-    }
-
-    return data.choices[0].message.content;
 }
 
 // Ask AI Chatbot helper
