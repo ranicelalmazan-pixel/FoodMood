@@ -813,11 +813,16 @@ function renderFavoritesList() {
 // ----------------------------------------------------
 
 async function fetchFromOpenAI(messages) {
-    // If the page is hosted on the same origin/port, use a relative path.
-    // If it's loaded from a custom preview server (like port 58760, 5500) or file://,
-    // point to the Express backend default port 8000.
-    const isSameOrigin = window.location.port === "8000";
-    const apiUrl = isSameOrigin ? "/api/ai" : "http://localhost:8000/api/ai";
+    let apiUrl = "/api/ai";
+    const hostname = window.location.hostname;
+    const protocol = window.location.protocol;
+    const port = window.location.port;
+
+    // If running locally on a custom static preview server (e.g. port 58760, 5500) or via file://,
+    // point to the Express backend default port 8000. On Vercel, it uses the relative "/api/ai".
+    if (protocol === "file:" || ((hostname === "localhost" || hostname === "127.0.0.1") && port !== "8000")) {
+        apiUrl = "http://localhost:8000/api/ai";
+    }
 
     try {
         const response = await fetch(apiUrl, {
